@@ -1,53 +1,78 @@
-import { useEffect } from "react";
-import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
+import React from "react";
+import "./App.css";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import { Toaster } from "./components/ui/toaster";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+// Pages
+import Landing from "./pages/Landing";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import AboutUs from "./pages/AboutUs";
+import Resources from "./pages/Resources";
+import Lesson from "./pages/Lesson";
+import Test from "./pages/Test";
 
-const Home = () => {
-  const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
-    }
-  };
-
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
-
-  return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
-    </div>
-  );
+// Protected Route Component
+const ProtectedRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-700 via-purple-600 to-orange-500">
+        <div className="text-white text-2xl">Cargando...</div>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return children;
 };
 
 function App() {
   return (
-    <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </div>
+    <AuthProvider>
+      <div className="App">
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/nosotros" element={<AboutUs />} />
+            
+            {/* Protected Routes */}
+            <Route 
+              path="/recursos" 
+              element={
+                <ProtectedRoute>
+                  <Resources />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/leccion/:lessonId" 
+              element={
+                <ProtectedRoute>
+                  <Lesson />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/test" 
+              element={
+                <ProtectedRoute>
+                  <Test />
+                </ProtectedRoute>
+              } 
+            />
+          </Routes>
+        </BrowserRouter>
+        <Toaster />
+      </div>
+    </AuthProvider>
   );
 }
 
